@@ -30,3 +30,16 @@
 *.exe
 *.out
 *.app
+
+# CSharp
+bin/
+obj/
+/csharp/.tmp/
+/csharp/packages/
+
+build/
+build-*/
+.vscode
+.cache
+.vs
+.idea

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\OrtSeedImpl\OrtSeedImpl.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ContentWithTargetPath Include="libs\onnxruntime_providers_shared.dll" >
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>onnxruntime_providers_shared.dll</TargetPath>
+        </ContentWithTargetPath>
+        <ContentWithTargetPath Include="libs\onnxruntime.dll" >
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>onnxruntime.dll</TargetPath>
+        </ContentWithTargetPath>
+    </ItemGroup>
+
+    <Target Name="RemoveFilesAfterBuild" AfterTargets="AfterBuild">
+        <RemoveDir Directories="$(TargetDir)\runtimes" />
+    </Target>
+
+</Project>
