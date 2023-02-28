@@ -54,6 +54,7 @@ public static class NativeMethod
         public IntPtr TrainingSessionGetTrainingModelInputName;
         public IntPtr TrainingSessionGetEvalModelInputName;
         public IntPtr GetSeed;
+        public IntPtr AccessOpenVPIRandomSeed;
     }
 
     public static class NativeTrainingMethods
@@ -90,14 +91,13 @@ public static class NativeMethod
                 OrtSetSeed =
                     (DOrtSetSeed)Marshal.GetDelegateForFunctionPointer(trainingApi_.SetSeed,
                         typeof(DOrtSetSeed));
-
-                Console.WriteLine("Get SetSeed API successfully!");
-
                 OrtGetSeed =
                     (DOrtGetSeed)Marshal.GetDelegateForFunctionPointer(trainingApi_.GetSeed,
                         typeof(DOrtGetSeed));
-
-                Console.WriteLine("Get GetSeed API successfully!");
+                AccessOpenVPIRandomSeed =
+                    (DAccessOpenVPIRandomSeed)Marshal.GetDelegateForFunctionPointer(
+                        trainingApi_.AccessOpenVPIRandomSeed,
+                        typeof(DAccessOpenVPIRandomSeed));
             }
         }
 
@@ -107,8 +107,13 @@ public static class NativeMethod
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]
         public delegate void DOrtGetSeed(out IntPtr seed);
 
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        public delegate void DAccessOpenVPIRandomSeed(int type, IntPtr key, IntPtr value, out IntPtr @out);
+
         public static DOrtSetSeed OrtSetSeed;
 
         public static DOrtGetSeed OrtGetSeed;
+
+        public static DAccessOpenVPIRandomSeed AccessOpenVPIRandomSeed;
     }
 }

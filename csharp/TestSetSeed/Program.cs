@@ -13,21 +13,23 @@ public static class Program
         var seed = OrtSeedImpl.Library.GetRandomSeed();
         Console.WriteLine($"Original seed: {seed}");
 
-        seed = new Random().NextInt64(0, Int64.MaxValue);
+        var randGen = new Random();
+        seed = randGen.NextInt64(0, Int64.MaxValue);
         
         OrtSeedImpl.Library.SetRandomSeed(seed);
         Console.WriteLine($"Set a seed: {seed}");
-
-        seed = OrtSeedImpl.Library.GetRandomSeed();
-        Console.WriteLine($"Current seed: {seed}");
+        
+        Console.WriteLine($"Run once");
 
         var str1 = InferRandomModule().GetArrayString();
-        
-        OrtSeedImpl.Library.SetRandomSeed(seed);
-        Console.WriteLine($"Set a seed: {seed}");
 
         seed = OrtSeedImpl.Library.GetRandomSeed();
         Console.WriteLine($"Current seed: {seed}");
+        
+        // OrtSeedImpl.Library.SetRandomSeed(seed = randGen.NextInt64(0, Int64.MaxValue));
+        // Console.WriteLine($"Set a seed: {seed}");
+        
+        Console.WriteLine($"Run twice");
 
         var str2 = InferRandomModule().GetArrayString();
 
@@ -42,6 +44,9 @@ public static class Program
     {
         var modelPath = Path.Join(
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "models", "random.onnx");
+        
+        OrtSeedImpl.Library.SetHint(100);
+        OrtSeedImpl.Library.SetSeed(100, 10000);
         var session = new InferenceSession(modelPath);
         var input = new DenseTensor<float>(new[] { 1, 32, 5 });
         input.Fill(0f);
