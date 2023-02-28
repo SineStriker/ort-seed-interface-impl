@@ -2,40 +2,59 @@
 
 public static class Library
 {
+    /// <summary>
+    /// Set global random seed (Deprecated)
+    /// </summary>
+    /// <param name="seed"></param>
     public static void SetRandomSeed(Int64 seed)
     {
         NativeMethod.NativeTrainingMethods.OrtSetSeed((IntPtr)seed);
     }
 
+    /// <summary>
+    /// Get global random seed (Deprecated)
+    /// </summary>
+    /// <returns></returns>
     public static Int64 GetRandomSeed()
     {
         NativeMethod.NativeTrainingMethods.OrtGetSeed(out var seed);
         return (Int64)seed;
     }
 
-    private enum OpenVPIRequestType
+    enum OpenVPIRequestType
     {
-        SetHint = 0,
-        GetHint,
-        SetSeed,
-        GetSeed,
-        RemoveSeed,
+        SetCurrentSessionId = 0,
+        GetCurrentSessionId,
+        SetSessionSeed,
+        GetSessionSeed,
+        SetSessionTaskId,
+        GetSessionTaskId,
+        RemoveSession,
     };
 
-    public static void SetHint(Int64 hint)
+    /// <summary>
+    /// Set the current session id, which is supposed to be positive
+    /// Call before creating an InferenceSession and then all random operators will be related to the session id
+    /// </summary>
+    /// <param name="sessionId"></param>
+    public static void SetCurrentSessionId(Int64 sessionId)
     {
         NativeMethod.NativeTrainingMethods.AccessOpenVPIRandomSeed(
-            (int)OpenVPIRequestType.SetHint,
+            (int)OpenVPIRequestType.SetCurrentSessionId,
             IntPtr.Zero,
-            (IntPtr)hint,
+            (IntPtr)sessionId,
             out _
         );
     }
 
-    public static Int64 GetHint()
+    /// <summary>
+    /// Get the current session id
+    /// </summary>
+    /// <returns></returns>
+    public static Int64 GetCurrentSessionId()
     {
         NativeMethod.NativeTrainingMethods.AccessOpenVPIRandomSeed(
-            (int)OpenVPIRequestType.GetHint,
+            (int)OpenVPIRequestType.GetCurrentSessionId,
             IntPtr.Zero,
             IntPtr.Zero,
             out var res
@@ -43,32 +62,83 @@ public static class Library
         return (Int64)res;
     }
 
-    public static void SetSeed(Int64 key, Int64 value)
+    /// <summary>
+    /// Set the seed of the session corresponding to `sessionId`, which is supposed to be positive
+    /// If the session doesn't exist then it will be allocated
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="seed"></param>
+    public static void SetSessionSeed(Int64 sessionId, Int64 seed)
     {
         NativeMethod.NativeTrainingMethods.AccessOpenVPIRandomSeed(
-            (int)OpenVPIRequestType.SetSeed,
-            (IntPtr)key,
-            (IntPtr)value,
+            (int)OpenVPIRequestType.SetSessionSeed,
+            (IntPtr)sessionId,
+            (IntPtr)seed,
             out _
         );
     }
 
-    public static Int64 GetSeed(Int64 key, Int64 defaultValue = 0)
+    /// <summary>
+    /// Get the seed of the session corresponding to `sessionId`
+    /// If the session doesn't exist, the `defaultValue` will be returned
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="defaultValue"></param>
+    /// <returns></returns>
+    public static Int64 GetSessionSeed(Int64 sessionId, Int64 defaultValue = 0)
     {
         NativeMethod.NativeTrainingMethods.AccessOpenVPIRandomSeed(
-            (int)OpenVPIRequestType.GetSeed,
-            (IntPtr)key,
+            (int)OpenVPIRequestType.GetSessionSeed,
+            (IntPtr)sessionId,
             (IntPtr)defaultValue,
             out var res
         );
         return (Int64)res;
     }
 
-    public static void RemoveSeed(Int64 key)
+    /// <summary>
+    /// Set current task id of the session corresponding to `sessionId`, which is supposed to be positive
+    /// If the session doesn't exist then it will be allocated
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="taskId"></param>
+    public static void SetSessionTaskId(Int64 sessionId, Int64 taskId)
     {
         NativeMethod.NativeTrainingMethods.AccessOpenVPIRandomSeed(
-            (int)OpenVPIRequestType.RemoveSeed,
-            (IntPtr)key,
+            (int)OpenVPIRequestType.SetSessionTaskId,
+            (IntPtr)sessionId,
+            (IntPtr)taskId,
+            out _
+        );
+    }
+
+    /// <summary>
+    /// Get current task id of the session corresponding to `sessionId`
+    /// If the session doesn't exist, the `defaultValue` will be returned
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="defaultValue"></param>
+    /// <returns></returns>
+    public static Int64 GetSessionTaskId(Int64 sessionId, Int64 defaultValue = 0)
+    {
+        NativeMethod.NativeTrainingMethods.AccessOpenVPIRandomSeed(
+            (int)OpenVPIRequestType.GetSessionTaskId,
+            (IntPtr)sessionId,
+            (IntPtr)defaultValue,
+            out var res
+        );
+        return (Int64)res;
+    }
+
+    /// <summary>
+    /// Remove a session corresponding to `sessionId`, this call will be ignored if the session doesn't exist
+    /// </summary>
+    /// <param name="sessionId"></param>
+    public static void RemoveSession(Int64 sessionId)
+    {
+        NativeMethod.NativeTrainingMethods.AccessOpenVPIRandomSeed(
+            (int)OpenVPIRequestType.RemoveSession,
+            (IntPtr)sessionId,
             IntPtr.Zero,
             out _
         );
