@@ -12,14 +12,21 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ContentWithTargetPath Include="libs\onnxruntime_providers_shared.dll" >
+        <ContentWithTargetPath Include="libs\onnxruntime_providers_shared.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>onnxruntime_providers_shared.dll</TargetPath>
         </ContentWithTargetPath>
-        <ContentWithTargetPath Include="libs\onnxruntime.dll" >
+        <ContentWithTargetPath Include="libs\onnxruntime.dll">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <TargetPath>onnxruntime.dll</TargetPath>
         </ContentWithTargetPath>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="models\random.onnx" />
+      <Content Include="models\random.onnx">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
     <Target Name="RemoveFilesAfterBuild" AfterTargets="AfterBuild">
