@@ -1,24 +1,14 @@
 cmake_minimum_required(VERSION 3.17)
 
-project(ortseed VERSION 0.0.0.1 LANGUAGES C CXX)
+project(ortseedimpl VERSION 0.0.0.1 LANGUAGES C CXX)
 
-file(GLOB_RECURSE _src include/*.h include/*.cpp src/*.h src/*.cpp)
+set(CONFIG_DISABLE_DEBUG off)
 
-# CPU
-set(_target ${PROJECT_NAME})
-add_executable(${_target} ${_src})
-target_include_directories(${_target} PUBLIC include)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED on)
 
-if(WIN32)
-    target_include_directories(${_target} PUBLIC libs/onnxruntime-win-x64-1.14.0/include)
-    target_link_directories(${_target} PUBLIC libs/onnxruntime-win-x64-1.14.0/lib)
-endif()
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-if(WIN32)
-    # GPU
-    set(_target ${PROJECT_NAME}-gpu)
-    add_executable(${_target} ${_src})
-    target_include_directories(${_target} PUBLIC include)
-    target_include_directories(${_target} PUBLIC libs/onnxruntime-win-x64-gpu-1.14.0/include)
-    target_link_directories(${_target} PUBLIC libs/onnxruntime-win-x64-gpu-1.14.0/lib)
-endif()
+add_subdirectory(ortproxy)

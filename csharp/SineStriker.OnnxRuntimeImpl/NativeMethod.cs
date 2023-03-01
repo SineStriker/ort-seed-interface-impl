@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using Microsoft.ML.OnnxRuntime;
 
-namespace OrtSeedImpl;
+namespace SineStriker.OnnxRuntimeImpl;
 
 public static class NativeMethod
 {
@@ -116,4 +116,8 @@ public static class NativeMethod
 
         public static DAccessOpenVPIRandomSeed AccessOpenVPIRandomSeed;
     }
+    
+    // OnnxRuntime Proxy
+    [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
+    public static extern bool ortproxy_init(IntPtr dev);
 }

@@ -8,17 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\OrtSeedImpl\OrtSeedImpl.csproj" />
+      <ProjectReference Include="..\SineStriker.OnnxRuntimeImpl\SineStriker.OnnxRuntimeImpl.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <ContentWithTargetPath Include="libs\onnxruntime_providers_shared.dll">
+        <ContentWithTargetPath Include="libs\**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>onnxruntime_providers_shared.dll</TargetPath>
-        </ContentWithTargetPath>
-        <ContentWithTargetPath Include="libs\onnxruntime.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>onnxruntime.dll</TargetPath>
+            <TargetPath>%(RecursiveDir)\%(Filename)%(Extension)</TargetPath>
         </ContentWithTargetPath>
     </ItemGroup>
 

@@ -1,42 +1,80 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using System.Reflection;
+using System.ComponentModel;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
+using SineStriker.OnnxRuntimeImpl;
 
 namespace TestSetSeed;
 
 public static class Program
 {
+    enum ExecutionProviderType
+    {
+        [Description("dml")] DirectML,
+        [Description("cpu")] CPU,
+        [Description("cuda")] CUDA,
+    }
+
+    private const ExecutionProviderType _epType = ExecutionProviderType.DirectML;
+
     public static int Main(string[] args)
     {
-        var randGen = new Random();
+        ApiProxy.Init($"eps/{Utils.GetEnumDesc(_epType)}");
+        Console.WriteLine();
+
+        // Add env for cuda
+        if (_epType == ExecutionProviderType.CUDA)
+        {
+            Utils.AddPath(@"C:\Program Files\NVIDIA\CUDNN\v8.8.0.121\bin");
+            Utils.AddPath(@"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5\bin");
+        }
+
+        var randGen = new System.Random();
         var getRandom = () => randGen.NextInt64(0, Int64.MaxValue);
 
         var sessionId = 1;
 
         // Set global id
         Console.WriteLine($"Set current session id as {sessionId}");
-        OrtSeedImpl.Library.SetCurrentSessionId(sessionId);
-                
+        Stablize.SetCurrentSessionId(sessionId);
+
         // Assertion
-        if (OrtSeedImpl.Library.GetCurrentSessionId() != sessionId)
+        if (Stablize.GetCurrentSessionId() != sessionId)
         {
             throw new Exception("Assertion failed setting or getting current session id from native library!");
         }
 
         // Load model
         Console.WriteLine("Load model");
-        var session = new InferenceSession(Path.Join(
-            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "models", "random.onnx"));
+
+        SessionOptions opt;
+        switch (_epType)
+        {
+            case ExecutionProviderType.DirectML:
+                opt = new SessionOptions();
+                opt.AppendExecutionProvider_DML(0);
+                break;
+            case ExecutionProviderType.CUDA:
+                opt = SessionOptions.MakeSessionOptionWithCudaProvider();
+                break;
+            default:
+                opt = new();
+                break;
+        }
+
+        var session = new InferenceSession(
+            Path.Join(Utils.ExeDir, "models", "random.onnx"),
+            opt
+        );
 
         // Set seed
         var seed = getRandom();
         Console.WriteLine($"Set session seed: id {sessionId}, value {seed}");
-        OrtSeedImpl.Library.SetSessionSeed(sessionId, seed);
-        
+        Stablize.SetSessionSeed(sessionId, seed);
+
         // Assertion
-        if (OrtSeedImpl.Library.GetSessionSeed(sessionId) != seed)
+        if (Stablize.GetSessionSeed(sessionId) != seed)
         {
             throw new Exception("Assertion failed setting or getting session seed from native library!");
         }
@@ -44,10 +82,10 @@ public static class Program
         // Set task id
         var taskId = 1;
         Console.WriteLine($"Set session taskId: id {sessionId}, value {taskId}");
-        OrtSeedImpl.Library.SetSessionTaskId(sessionId, taskId);
-        
+        Stablize.SetSessionTaskId(sessionId, taskId);
+
         // Assertion
-        if (OrtSeedImpl.Library.GetSessionTaskId(sessionId) != taskId)
+        if (Stablize.GetSessionTaskId(sessionId) != taskId)
         {
             throw new Exception("Assertion failed setting or getting session taskId from native library!");
         }
@@ -59,10 +97,10 @@ public static class Program
         // Set task id
         taskId = 2;
         Console.WriteLine($"Set session taskId: id {sessionId}, value {taskId}");
-        OrtSeedImpl.Library.SetSessionTaskId(sessionId, taskId);
-        
+        Stablize.SetSessionTaskId(sessionId, taskId);
+
         // Assertion
-        if (OrtSeedImpl.Library.GetSessionTaskId(sessionId) != taskId)
+        if (Stablize.GetSessionTaskId(sessionId) != taskId)
         {
             throw new Exception("Assertion failed setting or getting session taskId from native library!");
         }
@@ -79,11 +117,11 @@ public static class Program
 
         // Dispose session
         session.Dispose();
-        OrtSeedImpl.Library.RemoveSession(sessionId);
+        Stablize.RemoveSession(sessionId);
 
         Console.WriteLine(
-            $"Try get session seed after removing session: {OrtSeedImpl.Library.GetSessionTaskId(sessionId, -1)}");
-        
+            $"Try get session seed after removing session: {Stablize.GetSessionTaskId(sessionId, -1)}");
+
         return 0;
     }
 

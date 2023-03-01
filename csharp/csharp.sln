@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrtSeedImpl", "OrtSeedImpl\OrtSeedImpl.csproj", "{7889DA87-0A50-4772-86C2-CF55E54657FB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SineStriker.OnnxRuntimeImpl", "SineStriker.OnnxRuntimeImpl\SineStriker.OnnxRuntimeImpl.csproj", "{7889DA87-0A50-4772-86C2-CF55E54657FB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestSetSeed", "TestSetSeed\TestSetSeed.csproj", "{B008EFE6-CC12-4845-AFD1-FF6EB24AF00F}"
 EndProject

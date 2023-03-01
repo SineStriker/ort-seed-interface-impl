@@ -1,6 +1,8 @@
-﻿namespace OrtSeedImpl;
+﻿using System.Text;
 
-public static class Library
+namespace SineStriker.OnnxRuntimeImpl;
+
+public static class Stablize
 {
     /// <summary>
     /// Set global random seed (Deprecated)
