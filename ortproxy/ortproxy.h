@@ -50,7 +50,7 @@ COM_EXTERN_C_BEGIN
 
 typedef struct OrtSessionOptions OrtSessionOptions;
 
-COM_DECL_EXPORT bool ortproxy_init(const char *dev);
+COM_DECL_EXPORT bool ortproxy_init(const char *path);
 
 COM_DECL_EXPORT void *ORT_API_CALL OrtGetApiBase() NO_EXCEPTION;
 

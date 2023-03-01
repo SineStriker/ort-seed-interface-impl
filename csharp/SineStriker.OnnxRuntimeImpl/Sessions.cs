@@ -2,7 +2,7 @@
 
 namespace SineStriker.OnnxRuntimeImpl;
 
-public static class Seed
+public static class Sessions
 {
     /// <summary>
     /// Set global random seed (Deprecated)

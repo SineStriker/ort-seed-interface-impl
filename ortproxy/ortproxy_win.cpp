@@ -78,8 +78,8 @@ static wchar_t Module_Dir[MAX_PATH] = {0};
 
 static wchar_t Module_Name[MAX_PATH] = {0};
 
-static void MsgBoxError(const wchar_t *text, const wchar_t *title) {
-    ::MessageBoxW(nullptr, text, title,
+static void MsgBoxError(const wchar_t *text) {
+    ::MessageBoxW(nullptr, text, (*Module_Name) ? Module_Name : Error_Title,
                   MB_OK
 #ifdef CONFIG_WIN32_MSGBOX_TOPMOST
                       | MB_TOPMOST
@@ -135,25 +135,25 @@ char *wchar_to_char(const wchar_t *src_wchar, size_t cp = CP_ACP) {
     return buf;
 }
 
-bool ortproxy_init(const char *dev) {
+bool ortproxy_init(const char *path) {
     // Get module filename
     std::wstring wstr;
     wchar_t buf[MAX_PATH + 1] = {0};
     if (::GetModuleFileNameW(NULL, buf, MAX_PATH) != 0) {
         wstr = buf;
     } else {
-        ::MsgBoxError(TO_UNICODE("Failed to get module path!"), Error_Title);
+        MsgBoxError(TO_UNICODE("Failed to get module path!"));
         return false;
     }
 
     // Get executable directory
     size_t idx = wstr.find_last_of(L"\\");
     if (idx == std::wstring::npos) {
-        ::MsgBoxError(TO_UNICODE("Bad file path!"), Error_Title);
+        MsgBoxError(TO_UNICODE("Bad file path!"));
         return false;
     }
-    std::wstring dir = wstr.substr(0, idx);
-    ::WSTRCPY(Module_Dir, dir.data());
+    std::wstring exeDir = wstr.substr(0, idx);
+    ::WSTRCPY(Module_Dir, exeDir.data());
 
     // Get executable
     std::wstring name = wstr.substr(idx + 1);
@@ -164,26 +164,26 @@ bool ortproxy_init(const char *dev) {
     ::WSTRCPY(Module_Name, name.data());
 
     // Get library path
-    auto dev_w = char_to_wchar(dev, CP_UTF8);
-    std::wstring libdir = dev_w;
-    delete[] dev_w;
+    auto path_w = char_to_wchar(path, CP_UTF8);
+    std::wstring libdir = path_w;
+    delete[] path_w;
 
     // Determine path is relative or absolute
     if (::PathIsRelativeW(libdir.data())) {
-        libdir = dir + L"\\" + libdir;
+        libdir = exeDir + L"\\" + libdir;
     }
 
     WCOUT << "[OrtProxy] SetDllDirectory " << libdir << std::endl;
     ::SetDllDirectoryW(libdir.data());
 
-    std::wstring libpath = libdir + L"\\onnxruntime.dll";
-    WCOUT << "[OrtProxy] LoadLibrary " << libpath << std::endl;
-    
+    std::wstring libPath = libdir + L"\\onnxruntime.dll";
+    WCOUT << "[OrtProxy] LoadLibrary " << libPath << std::endl;
+
     // Load library
-    HINSTANCE hDLL = ::LoadLibraryW(libpath.data());
+    HINSTANCE hDLL = ::LoadLibraryW(libPath.data());
     if (!hDLL) {
         std::wstring msg = WinGetLastErrorString();
-        MsgBoxError(msg.data(), (*Module_Name) ? Module_Name : Error_Title);
+        MsgBoxError(msg.data());
         return false;
     }
 
@@ -201,7 +201,7 @@ bool ortproxy_init(const char *dev) {
             if (required) {
                 WCOUT << "[OrtProxy] Get required entry " << T.name << " failed" << std::endl;
                 std::wstring msg = WinGetLastErrorString();
-                MsgBoxError(msg.data(), (*Module_Name) ? Module_Name : Error_Title);
+                MsgBoxError(msg.data());
             }
             return false;
         }
