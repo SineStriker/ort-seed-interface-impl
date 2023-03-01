@@ -37,10 +37,10 @@ public static class Program
 
         // Set global id
         Console.WriteLine($"Set current session id as {sessionId}");
-        Stablize.SetCurrentSessionId(sessionId);
+        Seed.SetCurrentSessionId(sessionId);
 
         // Assertion
-        if (Stablize.GetCurrentSessionId() != sessionId)
+        if (Seed.GetCurrentSessionId() != sessionId)
         {
             throw new Exception("Assertion failed setting or getting current session id from native library!");
         }
@@ -71,10 +71,10 @@ public static class Program
         // Set seed
         var seed = getRandom();
         Console.WriteLine($"Set session seed: id {sessionId}, value {seed}");
-        Stablize.SetSessionSeed(sessionId, seed);
+        Seed.SetSessionSeed(sessionId, seed);
 
         // Assertion
-        if (Stablize.GetSessionSeed(sessionId) != seed)
+        if (Seed.GetSessionSeed(sessionId) != seed)
         {
             throw new Exception("Assertion failed setting or getting session seed from native library!");
         }
@@ -82,10 +82,10 @@ public static class Program
         // Set task id
         var taskId = 1;
         Console.WriteLine($"Set session taskId: id {sessionId}, value {taskId}");
-        Stablize.SetSessionTaskId(sessionId, taskId);
+        Seed.SetSessionTaskId(sessionId, taskId);
 
         // Assertion
-        if (Stablize.GetSessionTaskId(sessionId) != taskId)
+        if (Seed.GetSessionTaskId(sessionId) != taskId)
         {
             throw new Exception("Assertion failed setting or getting session taskId from native library!");
         }
@@ -97,10 +97,10 @@ public static class Program
         // Set task id
         taskId = 2;
         Console.WriteLine($"Set session taskId: id {sessionId}, value {taskId}");
-        Stablize.SetSessionTaskId(sessionId, taskId);
+        Seed.SetSessionTaskId(sessionId, taskId);
 
         // Assertion
-        if (Stablize.GetSessionTaskId(sessionId) != taskId)
+        if (Seed.GetSessionTaskId(sessionId) != taskId)
         {
             throw new Exception("Assertion failed setting or getting session taskId from native library!");
         }
@@ -117,10 +117,10 @@ public static class Program
 
         // Dispose session
         session.Dispose();
-        Stablize.RemoveSession(sessionId);
+        Seed.RemoveSession(sessionId);
 
         Console.WriteLine(
-            $"Try get session seed after removing session: {Stablize.GetSessionTaskId(sessionId, -1)}");
+            $"Try get session seed after removing session: {Seed.GetSessionTaskId(sessionId, -1)}");
 
         return 0;
     }
