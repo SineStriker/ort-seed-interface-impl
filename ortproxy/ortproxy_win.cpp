@@ -197,7 +197,7 @@ bool ortproxy_init(const char *path) {
     const auto infoWidth = std::setw(30);
 
     WCOUT << std::left << infoWidth << "[OrtProxy] SetDllDirectory " << libdir << std::endl;
-    // ::SetDllDirectoryW(libdir.data());
+    ::SetDllDirectoryW(libdir.data());
     // ::AddPath(libdir.data());
 
     std::wstring libPath = libdir + L"\\onnxruntime.dll";
