@@ -1,93 +1,13 @@
 #include "ortproxy.h"
 
-#include <Shlwapi.h>
-#include <Windows.h>
-
 #include <iomanip>
 #include <iostream>
 
-#ifdef CONFIG_DISABLE_DEBUG
-#    define COUT                                                                                   \
-        while (0)                                                                                  \
-        std::cout
-#    define WCOUT                                                                                  \
-        while (0)                                                                                  \
-        std::wcout
-#else
-#    define COUT  std::cout
-#    define WCOUT std::wcout
-#endif
+#include "dllspec.h"
 
-struct OrtSessionOptions;
+using std::left;
 
-typedef void *(*Func0)();
-typedef void *(*Func1)(OrtSessionOptions *, int);
-typedef void *(*Func2)(OrtSessionOptions *, uint32_t);
-typedef void *(*Func3)(OrtSessionOptions *, const char *);
-
-static void *dummy_Func0() {
-    return nullptr;
-};
-
-static void *dummy_Func1(OrtSessionOptions *, int) {
-    return nullptr;
-};
-
-static void *dummy_Func2(OrtSessionOptions *, uint32_t) {
-    return nullptr;
-};
-
-static void *dummy_Func3(OrtSessionOptions *, const char *) {
-    return nullptr;
-};
-
-#define CREATE_DELEGATE(FUNC, NAME)                                                                \
-    struct D##NAME {                                                                               \
-        const char *name = #NAME;                                                                  \
-        FUNC func = dummy_##FUNC;                                                                  \
-    };                                                                                             \
-    D##NAME NAME;
-
-struct dylib {
-    // Func0 OrtGetApiBase;
-    CREATE_DELEGATE(Func0, OrtGetApiBase)
-    CREATE_DELEGATE(Func1, OrtSessionOptionsAppendExecutionProvider_CPU);
-    CREATE_DELEGATE(Func2, OrtSessionOptionsAppendExecutionProvider_Nnapi);
-    CREATE_DELEGATE(Func2, OrtSessionOptionsAppendExecutionProvider_CoreML);
-    CREATE_DELEGATE(Func1, OrtSessionOptionsAppendExecutionProvider_Dnnl);
-    CREATE_DELEGATE(Func1, OrtSessionOptionsAppendExecutionProvider_CUDA);
-    CREATE_DELEGATE(Func1, OrtSessionOptionsAppendExecutionProvider_ROCM);
-    CREATE_DELEGATE(Func1, OrtSessionOptionsAppendExecutionProvider_DML);
-    CREATE_DELEGATE(Func3, OrtSessionOptionsAppendExecutionProvider_OpenVINO);
-    CREATE_DELEGATE(Func1, OrtSessionOptionsAppendExecutionProvider_Tensorrt);
-    CREATE_DELEGATE(Func1, OrtSessionOptionsAppendExecutionProvider_MIGraphX);
-    CREATE_DELEGATE(Func3, OrtSessionOptionsAppendExecutionProvider_Tvm);
-    HMODULE hDLL = nullptr;
-
-    ~dylib() {
-        if (hDLL) {
-            ::FreeLibrary(hDLL);
-        }
-    }
-};
-
-static dylib *g_lib = nullptr;
-
-static wchar_t Error_Title[] = TO_UNICODE("Fatal Error");
-
-static wchar_t Module_Dir[MAX_PATH] = {0};
-
-static wchar_t Module_Name[MAX_PATH] = {0};
-
-static void MsgBoxError(const wchar_t *text) {
-    ::MessageBoxW(nullptr, text, (*Module_Name) ? Module_Name : Error_Title,
-                  MB_OK
-#ifdef CONFIG_WIN32_MSGBOX_TOPMOST
-                      | MB_TOPMOST
-#endif
-                      | MB_SETFOREGROUND | MB_ICONERROR);
-}
-
+#ifdef _WIN32
 static void AddPath(const wchar_t *path) {
     auto sz = ::GetEnvironmentVariableW(L"Path", nullptr, 0);
     auto buf = new wchar_t[sz + 1];
@@ -151,82 +71,97 @@ char *wchar_to_char(const wchar_t *src_wchar, size_t cp = CP_ACP) {
     buf[len] = '\0';
     return buf;
 }
+#endif
 
 bool ortproxy_init(const char *path) {
-    // Get module filename
-    std::wstring wstr;
-    wchar_t buf[MAX_PATH + 1] = {0};
-    if (::GetModuleFileNameW(NULL, buf, MAX_PATH) != 0) {
-        wstr = buf;
-    } else {
-        MsgBoxError(TO_UNICODE("Failed to get module path!"));
+    if (GetAppPath().empty()) {
+        ShowError(
+#if _WIN32
+            WinGetLastErrorString()
+#else
+            STR("Bad file path!");
+#endif
+        );
         return false;
     }
 
-    // Get executable directory
-    size_t idx = wstr.find_last_of(L"\\");
-    if (idx == std::wstring::npos) {
-        MsgBoxError(TO_UNICODE("Bad file path!"));
-        return false;
+    PathString libdir;
+#ifdef _WIN32
+    {
+        auto path_w = char_to_wchar(path, CP_UTF8);
+        libdir = path_w;
+        delete[] path_w;
+        for (auto &ch : libdir) {
+            if (ch == L'/')
+                ch = L'\\';
+        }
     }
-    std::wstring exeDir = wstr.substr(0, idx);
-    ::WSTRCPY(Module_Dir, exeDir.data());
-
-    // Get executable
-    std::wstring name = wstr.substr(idx + 1);
-    idx = name.find_last_of(L".");
-    if (idx != std::wstring::npos && idx > 0) {
-        name = name.substr(0, idx);
-    }
-    ::WSTRCPY(Module_Name, name.data());
-
-    // Get library path
-    auto path_w = char_to_wchar(path, CP_UTF8);
-    std::wstring libdir = path_w;
-    delete[] path_w;
-    for (auto &ch : libdir) {
-        if (ch == L'/')
-            ch = L'\\';
-    }
+#else
+    libdir = path;
+#endif
 
     // Determine path is relative or absolute
-    if (::PathIsRelativeW(libdir.data())) {
-        libdir = exeDir + L"\\" + libdir;
+    if (IsRelative(libdir.data())) {
+        libdir = PathString(AppDirectory) + PathSeparator + libdir;
     }
 
     const auto infoWidth = std::setw(30);
 
-    WCOUT << std::left << infoWidth << "[OrtProxy] SetDllDirectory " << libdir << std::endl;
+#ifdef _WIN32
+    // SetDllDirectory
+    PRINT << left << infoWidth << "[OrtProxy] SetDllDirectory " << libdir << std::endl;
     ::SetDllDirectoryW(libdir.data());
-    // ::AddPath(libdir.data());
+#endif
 
-    std::wstring libPath = libdir + L"\\onnxruntime.dll";
-    WCOUT << std::left << infoWidth << "[OrtProxy] LoadLibrary " << libPath << std::endl;
+    PathString libName = GetSelfName();
+    if (libName.empty()) {
+        ShowError(
+#if _WIN32
+            WinGetLastErrorString()
+#else
+            STR("Bad file path!");
+#endif
+        );
+        return false;
+    }
+    PathString libPath = libdir + PathSeparator + libName;
 
-    // Load library
-    HINSTANCE hDLL = ::LoadLibraryW(libPath.data());
+    // LoadLibrary
+    PRINT << left << infoWidth << "[OrtProxy] LoadLibrary " << libPath << std::endl;
+    DllHandle hDLL = OpenDll(libPath.data());
+
     if (!hDLL) {
-        std::wstring msg = WinGetLastErrorString();
-        MsgBoxError(msg.data());
+        ShowError(
+#if _WIN32
+            WinGetLastErrorString()
+#else
+            STR("Failed to open library!");
+#endif
+        );
         return false;
     }
 
-    // Load entries
+    // GetProcAddress
     dylib lib;
     lib.hDLL = hDLL;
 
     auto getEntry = [&](auto &T, bool required = false) {
-        auto tmp = (decltype(T.func)) ::GetProcAddress(hDLL, T.name);
+        auto tmp = (decltype(T.func)) GetEntry(hDLL, T.name);
         if (tmp) {
             T.func = tmp;
-            COUT << std::left << infoWidth << "[OrtProxy] GetProcAddress " << T.name << " "
-                 << std::hex << (intptr_t) T.func << std::endl;
+            COUT << left << infoWidth << "[OrtProxy] GetProcAddress " << T.name << " " << std::hex
+                 << (intptr_t) T.func << std::endl;
         } else {
             if (required) {
-                WCOUT << std::left << infoWidth << "[OrtProxy] Get required entry " << T.name
+                ShowError(
+#if _WIN32
+                    WinGetLastErrorString()
+#else
+                    STR("Failed to dlsym!");
+#endif
+                );
+                PRINT << left << infoWidth << "[OrtProxy] Get required entry " << T.name
                       << " failed" << std::endl;
-                std::wstring msg = WinGetLastErrorString();
-                MsgBoxError(msg.data());
             }
             return false;
         }

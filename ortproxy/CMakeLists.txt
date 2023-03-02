@@ -1,26 +1,14 @@
 project(ortproxy LANGUAGES CXX VERSION 0.0.1.1)
 
-add_subdirectory(dylib)
-
-set(_src ortproxy.h shared_global.h)
-
-if(WIN32)
-    list(APPEND _src ortproxy_win.cpp)
-else()
-    list(APPEND _src ortproxy_unix.cpp)
-endif()
+file(GLOB _src *.h *.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${_src})
-
-target_link_libraries(${PROJECT_NAME} PRIVATE dylib)
 
 if(CONFIG_DISABLE_DEBUG)
     target_compile_definitions(${PROJECT_NAME} PUBLIC CONFIG_DISABLE_DEBUG)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME onnxruntime)
-
-add_subdirectory(test)
 
 if(WIN32)
     set(rc_name ${CMAKE_CURRENT_BINARY_DIR}/res.rc)
@@ -39,6 +27,8 @@ if(WIN32)
     target_sources(${PROJECT_NAME} PRIVATE ${rc_name})
 
     target_link_libraries(${PROJECT_NAME} PRIVATE shlwapi)
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE dl)
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "(Release|MinSizeRel)")
@@ -47,3 +37,5 @@ if(CMAKE_BUILD_TYPE MATCHES "(Release|MinSizeRel)")
         ${CMAKE_CURRENT_SOURCE_DIR}/../csharp/TestSetSeed/libs
     )
 endif()
+
+add_subdirectory(test)
