@@ -33,20 +33,16 @@ public static class Program
         var randGen = new System.Random();
         var getRandom = () => randGen.NextInt64(0, Int64.MaxValue);
 
-        var sessionId = 1;
+        var sessionId = getRandom();
 
         // Set global id
-        Console.WriteLine($"Set current session id: {sessionId}");
+        Console.WriteLine("[Test SetCurrentSessionId]");
         Sessions.SetCurrentSessionId(sessionId);
-
-        // Assertion
-        if (Sessions.GetCurrentSessionId() != sessionId)
-        {
-            throw new Exception("Assertion failed setting or getting current session id from native library!");
-        }
+        Utils.Assert(Sessions.GetCurrentSessionId() == sessionId);
+        Console.WriteLine("Pass");
 
         // Load model
-        Console.WriteLine("Load model");
+        Console.WriteLine("[Load model]");
 
         SessionOptions opt;
         switch (_epType)
@@ -70,57 +66,50 @@ public static class Program
 
         // Set seed
         var seed = getRandom();
-        Console.WriteLine($"Set session seed: id {sessionId}, value {seed}");
+        Console.WriteLine("[Test SetSessionSeed]");
         Sessions.SetSessionSeed(sessionId, seed);
-
-        // Assertion
-        if (Sessions.GetSessionSeed(sessionId) != seed)
-        {
-            throw new Exception("Assertion failed setting or getting session seed from native library!");
-        }
+        Utils.Assert(Sessions.GetSessionSeed(sessionId) == seed);
+        Console.WriteLine("Pass");
 
         // Set task id
         var taskId = 1;
-        Console.WriteLine($"Set session taskId: id {sessionId}, value {taskId}");
+        Console.WriteLine("[Test SetTaskId]");
         Sessions.SetSessionTaskId(sessionId, taskId);
-
-        // Assertion
-        if (Sessions.GetSessionTaskId(sessionId) != taskId)
-        {
-            throw new Exception("Assertion failed setting or getting session taskId from native library!");
-        }
+        Utils.Assert(Sessions.GetSessionTaskId(sessionId) == taskId);
+        Console.WriteLine("Pass");
 
         // Run once
-        Console.WriteLine("Run once");
+        Console.WriteLine("[Test Run]");
         var str1 = InferRandomModule(session).GetArrayString();
+        Console.WriteLine("Pass");
 
         // Set task id
         taskId = 2;
-        Console.WriteLine($"Set session taskId: id {sessionId}, value {taskId}");
+        Console.WriteLine("[Test SetTaskId]");
         Sessions.SetSessionTaskId(sessionId, taskId);
-
-        // Assertion
-        if (Sessions.GetSessionTaskId(sessionId) != taskId)
-        {
-            throw new Exception("Assertion failed setting or getting session taskId from native library!");
-        }
+        Utils.Assert(Sessions.GetSessionTaskId(sessionId) == taskId);
+        Console.WriteLine("Pass");
 
         // Run twice
-        Console.WriteLine("Run twice");
+        Console.WriteLine("[Test Stability]");
         var str2 = InferRandomModule(session).GetArrayString();
-        Console.WriteLine(str1 == str2 ? "Output tensors match!" : "Output tensors mismatch!");
+        // Console.WriteLine(str1 == str2 ? "Output tensors match!" : "Output tensors mismatch!");
+        Utils.Assert(str1 == str2);
+        Console.WriteLine("Pass");
 
         // Run again without updating task id
-        Console.WriteLine("Run third");
+        Console.WriteLine("[Test Instability]");
         var str3 = InferRandomModule(session).GetArrayString();
-        Console.WriteLine(str2 == str3 ? "Output tensors match!" : "Output tensors mismatch!");
+        // Console.WriteLine(str2 == str3 ? "Output tensors match!" : "Output tensors mismatch!");
+        Utils.Assert(str2 != str3);
+        Console.WriteLine("Pass");
 
         // Dispose session
+        Console.WriteLine("[Test RemoveSession]");
         session.Dispose();
         Sessions.RemoveSession(sessionId);
-
-        Console.WriteLine(
-            $"Try get session seed after removing session: {Sessions.GetSessionTaskId(sessionId, -1)}");
+        Utils.Assert(Sessions.GetSessionTaskId(sessionId, -1) == -1);
+        Console.WriteLine("Pass");
 
         return 0;
     }

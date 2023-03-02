@@ -6,7 +6,7 @@ namespace TestSetSeed;
 public static class Utils
 {
     public static readonly string ExeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
-    
+
     public static string GetEnumDesc<T>(T tField)
     {
         if (tField == null) throw new ArgumentNullException(nameof(tField));
@@ -31,5 +31,13 @@ public static class Utils
     {
         Environment.SetEnvironmentVariable("PATH",
             Environment.GetEnvironmentVariable("PATH") + ";" + path.Replace("/", "\\"));
+    }
+
+    public static void Assert(bool b)
+    {
+        if (!b)
+        {
+            throw new Exception("Assertion failed!");
+        }
     }
 }

@@ -22,8 +22,12 @@ struct OrtStatus {
     char msg[1]; // a null-terminated string
 };
 
+#ifdef _WIN32
+#    include <Windows.h>
+#endif
+
 int main(int argc, char *argv[]) {
-    ortproxy_init("dml");
+    ortproxy_init("eps/dml");
 
     auto res = (OrtStatus *) OrtSessionOptionsAppendExecutionProvider_DML(nullptr, 0);
     std::cout << (intptr_t) res;

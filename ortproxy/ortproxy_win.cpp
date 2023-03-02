@@ -3,6 +3,7 @@
 #include <Shlwapi.h>
 #include <Windows.h>
 
+#include <iomanip>
 #include <iostream>
 
 #ifdef CONFIG_DISABLE_DEBUG
@@ -87,6 +88,22 @@ static void MsgBoxError(const wchar_t *text) {
                       | MB_SETFOREGROUND | MB_ICONERROR);
 }
 
+static void AddPath(const wchar_t *path) {
+    auto sz = ::GetEnvironmentVariableW(L"Path", nullptr, 0);
+    auto buf = new wchar_t[sz + 1];
+    ::wmemset(buf, 0, sz + 1);
+    ::GetEnvironmentVariableW(L"Path", buf, sz);
+
+    std::wstring str(buf);
+    delete[] buf;
+
+    if (str.size() > 0 && str.back() != L';') {
+        str += L';';
+    }
+    str += path;
+    ::SetEnvironmentVariableW(L"Path", str.data());
+}
+
 std::wstring WinGetLastErrorString(int *errNum = nullptr) {
     // Get the error message ID, if any.
     DWORD errorMessageID = ::GetLastError();
@@ -167,17 +184,24 @@ bool ortproxy_init(const char *path) {
     auto path_w = char_to_wchar(path, CP_UTF8);
     std::wstring libdir = path_w;
     delete[] path_w;
+    for (auto &ch : libdir) {
+        if (ch == L'/')
+            ch = L'\\';
+    }
 
     // Determine path is relative or absolute
     if (::PathIsRelativeW(libdir.data())) {
         libdir = exeDir + L"\\" + libdir;
     }
 
-    WCOUT << "[OrtProxy] SetDllDirectory " << libdir << std::endl;
-    ::SetDllDirectoryW(libdir.data());
+    const auto infoWidth = std::setw(30);
+
+    WCOUT << std::left << infoWidth << "[OrtProxy] SetDllDirectory " << libdir << std::endl;
+    // ::SetDllDirectoryW(libdir.data());
+    // ::AddPath(libdir.data());
 
     std::wstring libPath = libdir + L"\\onnxruntime.dll";
-    WCOUT << "[OrtProxy] LoadLibrary " << libPath << std::endl;
+    WCOUT << std::left << infoWidth << "[OrtProxy] LoadLibrary " << libPath << std::endl;
 
     // Load library
     HINSTANCE hDLL = ::LoadLibraryW(libPath.data());
@@ -195,11 +219,12 @@ bool ortproxy_init(const char *path) {
         auto tmp = (decltype(T.func)) ::GetProcAddress(hDLL, T.name);
         if (tmp) {
             T.func = tmp;
-            COUT << "[OrtProxy] Get entry of " << T.name << " " << std::hex << (intptr_t) T.func
-                 << std::endl;
+            COUT << std::left << infoWidth << "[OrtProxy] GetProcAddress " << T.name << " "
+                 << std::hex << (intptr_t) T.func << std::endl;
         } else {
             if (required) {
-                WCOUT << "[OrtProxy] Get required entry " << T.name << " failed" << std::endl;
+                WCOUT << std::left << infoWidth << "[OrtProxy] Get required entry " << T.name
+                      << " failed" << std::endl;
                 std::wstring msg = WinGetLastErrorString();
                 MsgBoxError(msg.data());
             }
