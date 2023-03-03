@@ -22,6 +22,7 @@ static PathChar PathSeparator = L'\\';
 #else
 #    include <dlfcn.h>
 #    include <limits.h>
+#    include <string.h>
 
 using PathChar = char;
 using PathString = std::string;
@@ -98,7 +99,7 @@ static void ShowError(const PathString &str) {
 #    endif
                       | MB_SETFOREGROUND | MB_ICONERROR);
 #else
-    fprintf(stderr, "%s\n", str.data);
+    fprintf(stderr, "%s\n", str.data());
 #endif
 }
 
@@ -189,7 +190,7 @@ static PathString GetSelfName() {
     }
 #else
     Dl_info dl_info;
-    dladdr((void *) add, &dl_info);
+    dladdr((void *) GetSelfName, &dl_info);
     auto buf = dl_info.dli_fname;
 #endif
     PathString path(buf);

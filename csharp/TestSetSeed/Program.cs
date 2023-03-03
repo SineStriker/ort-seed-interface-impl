@@ -16,7 +16,7 @@ public static class Program
         [Description("cuda")] CUDA,
     }
 
-    private const ExecutionProviderType _epType = ExecutionProviderType.DirectML;
+    private const ExecutionProviderType _epType = ExecutionProviderType.CPU;
 
     public static int Main(string[] args)
     {

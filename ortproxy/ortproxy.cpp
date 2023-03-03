@@ -79,7 +79,7 @@ bool ortproxy_init(const char *path) {
 #if _WIN32
             WinGetLastErrorString()
 #else
-            STR("Bad file path!");
+            STR("Bad file path!")
 #endif
         );
         return false;
@@ -119,7 +119,7 @@ bool ortproxy_init(const char *path) {
 #if _WIN32
             WinGetLastErrorString()
 #else
-            STR("Bad file path!");
+            STR("Bad file path!")
 #endif
         );
         return false;
@@ -135,7 +135,7 @@ bool ortproxy_init(const char *path) {
 #if _WIN32
             WinGetLastErrorString()
 #else
-            STR("Failed to open library!");
+            STR("Failed to open library!")
 #endif
         );
         return false;
@@ -157,7 +157,7 @@ bool ortproxy_init(const char *path) {
 #if _WIN32
                     WinGetLastErrorString()
 #else
-                    STR("Failed to dlsym!");
+                    STR("Failed to dlsym!")
 #endif
                 );
                 PRINT << left << infoWidth << "[OrtProxy] Get required entry " << T.name

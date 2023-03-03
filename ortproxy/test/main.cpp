@@ -27,7 +27,9 @@ struct OrtStatus {
 #endif
 
 int main(int argc, char *argv[]) {
-    ortproxy_init("eps/dml");
+    if (!ortproxy_init("eps/dml")) {
+        return -1;
+    }
 
     auto res = (OrtStatus *) OrtSessionOptionsAppendExecutionProvider_DML(nullptr, 0);
     std::cout << (intptr_t) res;
