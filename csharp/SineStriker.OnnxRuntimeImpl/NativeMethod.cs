@@ -116,8 +116,8 @@ public static class NativeMethod
 
         public static DAccessOpenVPIRandomSeed AccessOpenVPIRandomSeed;
     }
-    
+
     // OnnxRuntime Proxy
-    [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
+    [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
     public static extern bool ortproxy_init(IntPtr dev);
 }
