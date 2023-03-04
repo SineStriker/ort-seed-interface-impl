@@ -20,7 +20,7 @@ public static class Program
 
     public static int Main(string[] args)
     {
-        ApiProxy.Init($"eps/{Utils.GetEnumDesc(_epType)}");
+        ApiProxy.Init($"eps/{Utils.GetEnumDesc(_epType)}", true);
         Console.WriteLine();
 
         // Add env for cuda

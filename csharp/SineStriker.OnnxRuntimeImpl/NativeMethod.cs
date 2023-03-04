@@ -119,5 +119,5 @@ public static class NativeMethod
 
     // OnnxRuntime Proxy
     [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool ortproxy_init(IntPtr dev);
+    public static extern bool ortproxy_init(IntPtr dev, bool relative_to_dll);
 }

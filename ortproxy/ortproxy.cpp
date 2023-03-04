@@ -8,23 +8,23 @@
 using std::left;
 
 #ifdef _WIN32
-static void AddPath(const wchar_t *path) {
-    auto sz = ::GetEnvironmentVariableW(L"Path", nullptr, 0);
-    auto buf = new wchar_t[sz + 1];
-    ::wmemset(buf, 0, sz + 1);
-    ::GetEnvironmentVariableW(L"Path", buf, sz);
+// static void AddPath(const wchar_t *path) {
+//     auto sz = ::GetEnvironmentVariableW(L"Path", nullptr, 0);
+//     auto buf = new wchar_t[sz + 1];
+//     ::wmemset(buf, 0, sz + 1);
+//     ::GetEnvironmentVariableW(L"Path", buf, sz);
 
-    std::wstring str(buf);
-    delete[] buf;
+//     std::wstring str(buf);
+//     delete[] buf;
 
-    if (str.size() > 0 && str.back() != L';') {
-        str += L';';
-    }
-    str += path;
-    ::SetEnvironmentVariableW(L"Path", str.data());
-}
+//     if (str.size() > 0 && str.back() != L';') {
+//         str += L';';
+//     }
+//     str += path;
+//     ::SetEnvironmentVariableW(L"Path", str.data());
+// }
 
-std::wstring WinGetLastErrorString(int *errNum = nullptr) {
+static std::wstring WinGetLastErrorString(int *errNum = nullptr) {
     // Get the error message ID, if any.
     DWORD errorMessageID = ::GetLastError();
     if (errorMessageID == 0) {
@@ -54,7 +54,7 @@ std::wstring WinGetLastErrorString(int *errNum = nullptr) {
     return message;
 }
 
-wchar_t *char_to_wchar(const char *src_char, size_t cp = CP_ACP) {
+static wchar_t *char_to_wchar(const char *src_char, size_t cp = CP_ACP) {
     auto src_len = strlen(src_char);
     int len = MultiByteToWideChar(cp, 0, src_char, src_len, NULL, 0);
     auto buf = new wchar_t[len + 1];
@@ -63,18 +63,51 @@ wchar_t *char_to_wchar(const char *src_char, size_t cp = CP_ACP) {
     return buf;
 }
 
-char *wchar_to_char(const wchar_t *src_wchar, size_t cp = CP_ACP) {
-    auto src_len = wcslen(src_wchar);
-    int len = WideCharToMultiByte(cp, 0, src_wchar, src_len, 0, 0, NULL, NULL);
-    char *buf = new char[len + 1];
-    WideCharToMultiByte(cp, 0, src_wchar, src_len, buf, len, NULL, NULL);
-    buf[len] = '\0';
-    return buf;
-}
+// static char *wchar_to_char(const wchar_t *src_wchar, size_t cp = CP_ACP) {
+//     auto src_len = wcslen(src_wchar);
+//     int len = WideCharToMultiByte(cp, 0, src_wchar, src_len, 0, 0, NULL, NULL);
+//     char *buf = new char[len + 1];
+//     WideCharToMultiByte(cp, 0, src_wchar, src_len, buf, len, NULL, NULL);
+//     buf[len] = '\0';
+//     return buf;
+// }
 #endif
 
-bool ortproxy_init(const char *path) {
-    if (GetAppPath().empty()) {
+static PathString toUnicode(const std::string &str) {
+#ifdef _WIN32
+    auto ustr = char_to_wchar(str.data(), CP_UTF8);
+    std::wstring res(ustr);
+    delete[] ustr;
+    return res;
+#else
+    return str;
+#endif
+}
+
+#ifdef _WIN32
+#    include <fcntl.h>
+#    include <io.h>
+
+struct LocaleGuard {
+    LocaleGuard() {
+        mode = _setmode(_fileno(stdout), _O_U16TEXT);
+    }
+    ~LocaleGuard() {
+        _setmode(_fileno(stdout), mode);
+    }
+    int mode;
+};
+#endif
+
+bool ortproxy_init(const char *path, bool relative_to_dll) {
+#ifdef _WIN32
+    LocaleGuard lg;
+#endif
+
+    PathString appName = GetAppName();
+    PathString libName = GetSelfName();
+
+    if (appName.empty() || libName.empty()) {
         ShowError(
 #if _WIN32
             WinGetLastErrorString()
@@ -85,24 +118,11 @@ bool ortproxy_init(const char *path) {
         return false;
     }
 
-    PathString libdir;
-#ifdef _WIN32
-    {
-        auto path_w = char_to_wchar(path, CP_UTF8);
-        libdir = path_w;
-        delete[] path_w;
-        for (auto &ch : libdir) {
-            if (ch == L'/')
-                ch = L'\\';
-        }
-    }
-#else
-    libdir = path;
-#endif
+    PathString libdir = toNativeSeparators(toUnicode(path));
 
     // Determine path is relative or absolute
     if (IsRelative(libdir.data())) {
-        libdir = PathString(AppDirectory) + PathSeparator + libdir;
+        libdir = PathString(relative_to_dll ? DllDirectory : AppDirectory) + PathSeparator + libdir;
     }
 
     const auto infoWidth = std::setw(30);
@@ -113,17 +133,6 @@ bool ortproxy_init(const char *path) {
     ::SetDllDirectoryW(libdir.data());
 #endif
 
-    PathString libName = GetSelfName();
-    if (libName.empty()) {
-        ShowError(
-#if _WIN32
-            WinGetLastErrorString()
-#else
-            STR("Bad file path!")
-#endif
-        );
-        return false;
-    }
     PathString libPath = libdir + PathSeparator + libName;
 
     // LoadLibrary
@@ -149,8 +158,8 @@ bool ortproxy_init(const char *path) {
         auto tmp = (decltype(T.func)) GetEntry(hDLL, T.name);
         if (tmp) {
             T.func = tmp;
-            COUT << left << infoWidth << "[OrtProxy] GetProcAddress " << T.name << " " << std::hex
-                 << (intptr_t) T.func << std::endl;
+            PRINT << left << infoWidth << "[OrtProxy] GetProcAddress "
+                  << "0x" << std::hex << (intptr_t) T.func << " " << T.name << std::endl;
         } else {
             if (required) {
                 ShowError(

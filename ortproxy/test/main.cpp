@@ -27,7 +27,7 @@ struct OrtStatus {
 #endif
 
 int main(int argc, char *argv[]) {
-    if (!ortproxy_init("eps/dml")) {
+    if (!ortproxy_init("eps/dml", true)) {
         return -1;
     }
 

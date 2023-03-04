@@ -82,11 +82,19 @@ static wchar_t ErrorTitle[] = L"Fatal Error";
 static wchar_t AppDirectory[MAX_PATH + 1] = {0};
 
 static wchar_t AppName[MAX_PATH + 1] = {0};
+
+static wchar_t DllDirectory[MAX_PATH + 1] = {0};
+
+static wchar_t DllName[MAX_PATH + 1] = {0};
 #else
 
 static char AppDirectory[PATH_MAX + 1] = {0};
 
 static char AppName[NAME_MAX + 1] = {0};
+
+static char DllDirectory[PATH_MAX + 1] = {0};
+
+static char DllName[NAME_MAX + 1] = {0};
 
 #endif
 
@@ -103,7 +111,7 @@ static void ShowError(const PathString &str) {
 #endif
 }
 
-static PathString GetAppPath() {
+static PathString GetAppName() {
 #ifdef _WIN32
     PathChar buf[MAX_PATH + 1] = {0};
     if (!::GetModuleFileNameW(NULL, buf, MAX_PATH)) {
@@ -137,7 +145,7 @@ static PathString GetAppPath() {
     }
     STRCPY(AppName, name.data());
 
-    return path;
+    return path.substr(idx + 1);
 }
 
 static bool IsRelative(const PathChar *path) {
@@ -179,13 +187,10 @@ static PathString GetSelfName() {
 #ifdef _WIN32
     wchar_t buf[MAX_PATH + 1] = {0};
     HMODULE hm = NULL;
-    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                               GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                           (LPCWSTR) &GetSelfName, &hm) == 0) {
-        return {};
-    }
-    if (GetModuleFileNameW(hm, buf, sizeof(buf)) == 0) {
-        int ret = GetLastError();
+    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                                GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                            (LPCWSTR) &GetSelfName, &hm) ||
+        !GetModuleFileNameW(hm, buf, sizeof(buf))) {
         return {};
     }
 #else
@@ -200,9 +205,25 @@ static PathString GetSelfName() {
     if (idx == PathString::npos) {
         return {};
     }
+    auto exeDir = path.substr(0, idx);
+    STRCPY(DllDirectory, exeDir.data());
 
     // Get name
+    STRCPY(DllName, path.substr(idx + 1).data());
+
     return path.substr(idx + 1);
+}
+
+static PathString toNativeSeparators(PathString path) {
+    for (auto &ch : path) {
+#if _WIN32
+        if (ch == L'/')
+#else
+        if (ch == '\\')
+#endif
+            ch = PathSeparator;
+    }
+    return path;
 }
 
 struct dylib {
